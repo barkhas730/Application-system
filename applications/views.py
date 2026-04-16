@@ -20,6 +20,8 @@ from .forms import ApplicationForm, AttachmentForm, DecisionForm, ApplicationTyp
 from . import services as app_service
 from logs.utils import log_action
 from accounts.views import sysadmin_required
+# CustomUser-ийг application_list_view дотор ашиглах тул файлын эхэнд нэг удаа import хийнэ
+from accounts.models import CustomUser
 
 
 def role_required(*roles):
@@ -168,7 +170,7 @@ def application_list_view(request):
     paginator = Paginator(apps, 15)
     page_obj  = paginator.get_page(request.GET.get('page'))
 
-    from accounts.models import CustomUser
+    # CustomUser нь файлын эхэнд import хийгдсэн
     departments = (
         CustomUser.objects.filter(is_active=True)
         .exclude(department='')

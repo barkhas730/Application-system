@@ -9,6 +9,8 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import update_session_auth_hash
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
 from django.contrib import messages
 from django.db.models import Q
 from django.core.paginator import Paginator
@@ -264,8 +266,14 @@ def user_reset_password_view(request, pk):
     user = get_object_or_404(CustomUser, pk=pk)
     if request.method == 'POST':
         new_password = request.POST.get('new_password', '').strip()
-        if len(new_password) < 6:
-            messages.error(request, 'Нууц үг хамгийн багадаа 6 тэмдэгт байх ёстой.')
+        try:
+            # AUTH_PASSWORD_VALIDATORS-ийн бүх дүрмийг нэгэн зэрэг шалгана:
+            # MinimumLengthValidator (8 тэмдэгт), CommonPasswordValidator,
+            # NumericPasswordValidator, UserAttributeSimilarityValidator
+            validate_password(new_password, user)
+        except ValidationError as exc:
+            # Алдааны мессежүүдийг монгол хэлнд нийлүүлэн харуулна
+            messages.error(request, ' '.join(exc.messages))
         else:
             user.set_password(new_password)
             user.save()
