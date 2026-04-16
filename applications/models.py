@@ -74,6 +74,8 @@ class Application(models.Model):
         verbose_name='Хариуцах захирал'
     )
     is_draft = models.BooleanField(default=True, verbose_name='Ноорог эсэх')
+    # TODO: is_cancelled талбар нь status='cancelled'-тай давхардсан.
+    # Кодын хаана ч шүүлтэнд ашиглагдахгүй. Ирээдүйд migration-р устгана.
     is_cancelled = models.BooleanField(default=False, verbose_name='Цуцалсан эсэх')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Үүсгэсэн')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Шинэчлэгдсэн')
@@ -92,17 +94,19 @@ class Application(models.Model):
         """
         Өргөдлийн дугаар үүсгэх. transaction.atomic() дотор дуудна.
         Формат: APP-ЖЖЖЖ-ДДД (жишээ: APP-2025-001)
+        Тоон утгаар max() авдаг тул APP-2025-9 < APP-2025-10 буруу эрэмбэлэлт гарахгүй.
         """
         year = timezone.now().year
-        last = (
+        existing = (
             Application.objects
             .filter(app_number__startswith=f'APP-{year}-')
             .order_by('app_number')
-            .last()
+            .values_list('app_number', flat=True)
         )
-        if last:
+        if existing:
             try:
-                num = int(last.app_number.split('-')[-1]) + 1
+                max_num = max(int(n.split('-')[-1]) for n in existing)
+                num = max_num + 1
             except (ValueError, IndexError):
                 num = 1
         else:

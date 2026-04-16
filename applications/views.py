@@ -19,6 +19,7 @@ from .models import Application, ApplicationType, Attachment, DecisionHistory
 from .forms import ApplicationForm, AttachmentForm, DecisionForm, ApplicationTypeForm
 from . import services as app_service
 from logs.utils import log_action
+from accounts.views import sysadmin_required
 
 
 def role_required(*roles):
@@ -41,20 +42,6 @@ def role_required(*roles):
         return wrapper
 
     return decorator
-
-
-def sysadmin_required(view_func):
-    """Зөвхөн системийн админд зориулсан декоратор."""
-    from functools import wraps
-
-    @wraps(view_func)
-    def wrapper(request, *args, **kwargs):
-        if not request.user.is_authenticated or not request.user.is_sysadmin:
-            messages.error(request, 'Энэ хуудсанд хандах эрх байхгүй.')
-            return redirect('dashboard')
-        return view_func(request, *args, **kwargs)
-
-    return wrapper
 
 
 # ---------------------------------------------------------------------------
@@ -335,8 +322,13 @@ def application_edit_view(request, pk):
             app_obj = form.save(commit=False)
             app_obj.extra_data = extra_data
 
-            file = request.FILES.get('file') if request.FILES.get('file') and \
-                   request.FILES['file'].size <= app_service.MAX_FILE_SIZE else None
+            file = None
+            if request.FILES.get('file'):
+                uploaded_file = request.FILES['file']
+                if uploaded_file.size > app_service.MAX_FILE_SIZE:
+                    messages.warning(request, 'Хавсралт файл 10МБ-аас хэтэрсэн тул хавсаргагдсангүй.')
+                else:
+                    file = uploaded_file
 
             app_service.resubmit_application(
                 app=app_obj,
