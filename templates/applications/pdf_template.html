@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Өргөдөл — {{ app.app_number }}</title>
+<style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+        font-family: 'Segoe UI', Arial, sans-serif;
+        font-size: 13px;
+        color: #1a1a2e;
+        background: #f5f7fa;
+        padding: 24px;
+    }
+
+    .page {
+        max-width: 780px;
+        margin: 0 auto;
+        background: #ffffff;
+        border-radius: 10px;
+        box-shadow: 0 2px 16px rgba(0,0,0,0.10);
+        overflow: hidden;
+    }
+
+    .doc-header {
+        background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%);
+        color: #ffffff;
+        padding: 28px 32px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+    }
+
+    .doc-header .org-name { font-size: 18px; font-weight: 700; }
+    .doc-header .doc-sub  { font-size: 12px; opacity: .80; margin-top: 4px; }
+    .doc-header .app-number { font-size: 22px; font-weight: 800; text-align: right; }
+    .doc-header .app-number-label {
+        font-size: 10px; opacity: .70; text-align: right; margin-top: 2px;
+        text-transform: uppercase; letter-spacing: .06em;
+    }
+
+    .status-bar {
+        display: flex; align-items: center; gap: 10px;
+        padding: 10px 32px;
+        background: #f0f4ff;
+        border-bottom: 1px solid #dde3f0;
+        font-size: 12px; color: #475569;
+    }
+
+    .status-badge {
+        display: inline-block; padding: 3px 12px; border-radius: 20px;
+        font-weight: 700; font-size: 12px;
+        background: #16a34a; color: #fff;
+    }
+
+    .doc-body { padding: 28px 32px; }
+
+    .section { margin-bottom: 24px; }
+
+    .section-title {
+        font-size: 11px; font-weight: 700; text-transform: uppercase;
+        letter-spacing: .08em; color: #2563eb;
+        padding-bottom: 6px; border-bottom: 2px solid #dbeafe; margin-bottom: 12px;
+    }
+
+    .info-grid {
+        display: grid; grid-template-columns: 160px 1fr;
+        border: 1px solid #e2e8f0; border-radius: 6px; overflow: hidden;
+    }
+
+    .info-grid .lbl {
+        background: #f8fafc; padding: 8px 12px;
+        font-weight: 600; color: #475569;
+        border-bottom: 1px solid #e2e8f0; font-size: 12px;
+    }
+
+    .info-grid .val {
+        background: #ffffff; padding: 8px 12px;
+        border-bottom: 1px solid #e2e8f0;
+        color: #1e293b; font-size: 12px;
+    }
+
+    .info-grid .lbl:nth-last-child(2),
+    .info-grid .val:last-child { border-bottom: none; }
+
+    .history-table {
+        width: 100%; border-collapse: collapse;
+        border: 1px solid #e2e8f0; border-radius: 6px; overflow: hidden;
+    }
+
+    .history-table th {
+        background: #f1f5f9; padding: 8px 12px; text-align: left;
+        font-size: 11px; font-weight: 700; text-transform: uppercase;
+        letter-spacing: .05em; color: #64748b; border-bottom: 1px solid #e2e8f0;
+    }
+
+    .history-table td {
+        padding: 8px 12px; border-bottom: 1px solid #f1f5f9;
+        font-size: 12px; color: #334155; vertical-align: top;
+    }
+
+    .history-table tr:last-child td { border-bottom: none; }
+    .history-table tr:nth-child(even) td { background: #fafafa; }
+
+    .doc-footer {
+        margin-top: 24px; padding-top: 16px;
+        border-top: 1px solid #e2e8f0;
+        text-align: center; font-size: 11px; color: #94a3b8;
+    }
+
+    .print-actions {
+        max-width: 780px; margin: 0 auto 16px;
+        display: flex; gap: 10px; justify-content: flex-end;
+    }
+
+    .btn-print {
+        background: #2563eb; color: #fff; border: none;
+        padding: 9px 20px; border-radius: 6px;
+        font-size: 13px; font-weight: 600; cursor: pointer;
+    }
+
+    .btn-print:hover { background: #1d4ed8; }
+
+    .btn-back {
+        background: #f1f5f9; color: #475569;
+        border: 1px solid #e2e8f0;
+        padding: 9px 20px; border-radius: 6px;
+        font-size: 13px; font-weight: 600;
+        cursor: pointer; text-decoration: none;
+    }
+
+    @media print {
+        body { background: #fff; padding: 0; }
+        .page { box-shadow: none; border-radius: 0; }
+        .print-actions { display: none !important; }
+        .doc-header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .status-bar  { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+</style>
+</head>
+<body>
+
+<div class="print-actions">
+    <a href="javascript:history.back()" class="btn-back">← Буцах</a>
+    <button class="btn-print" onclick="window.print()">🖨 PDF хэвлэх</button>
+</div>
+
+<div class="page">
+
+    <div class="doc-header">
+        <div>
+            <div class="org-name">ЦАХИМ ӨРГӨДЛИЙН СИСТЕМ</div>
+            <div class="doc-sub">Өргөдлийн баримт бичиг</div>
+        </div>
+        <div>
+            <div class="app-number">{{ app.app_number }}</div>
+            <div class="app-number-label">Дугаар</div>
+        </div>
+    </div>
+
+    <div class="status-bar">
+        Төлөв:&nbsp;<span class="status-badge">{{ app.get_status_display }}</span>
+        &nbsp;|&nbsp; Үүсгэсэн: {{ app.created_at|date:"Y-m-d H:i" }}
+        {% if app.closed_at %}&nbsp;|&nbsp; Хаагдсан: {{ app.closed_at|date:"Y-m-d H:i" }}{% endif %}
+    </div>
+
+    <div class="doc-body">
+
+        <div class="section">
+            <div class="section-title">Өргөдлийн мэдээлэл</div>
+            <div class="info-grid">
+                <div class="lbl">Гарчиг</div>
+                <div class="val">{{ app.title }}</div>
+                <div class="lbl">Төрөл</div>
+                <div class="val">{{ app.app_type.name }}</div>
+                <div class="lbl">Ач холбогдол</div>
+                <div class="val">{{ app.get_priority_display }}</div>
+                <div class="lbl">Тайлбар</div>
+                <div class="val">{{ app.description }}</div>
+                {% if app.due_date %}
+                <div class="lbl">Дуусах огноо</div>
+                <div class="val">{{ app.due_date }}</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Өргөдөл гаргагч</div>
+            <div class="info-grid">
+                <div class="lbl">Нэр</div>
+                <div class="val">{{ app.user.get_full_name|default:app.user.username }}</div>
+                {% if app.user.department %}
+                <div class="lbl">Хэлтэс</div>
+                <div class="val">{{ app.user.department }}</div>
+                {% endif %}
+                {% if app.user.email %}
+                <div class="lbl">Имэйл</div>
+                <div class="val">{{ app.user.email }}</div>
+                {% endif %}
+                {% if app.user.phone %}
+                <div class="lbl">Утас</div>
+                <div class="val">{{ app.user.phone }}</div>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if extra_display %}
+        <div class="section">
+            <div class="section-title">Нэмэлт мэдээлэл</div>
+            <div class="info-grid">
+                {% for label, val in extra_display %}
+                <div class="lbl">{{ label }}</div>
+                <div class="val">{{ val }}</div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="section">
+            <div class="section-title">Шийдвэрийн түүх</div>
+            <table class="history-table">
+                <thead>
+                    <tr>
+                        <th>Огноо</th>
+                        <th>Үйлдэгч</th>
+                        <th>Үйлдэл</th>
+                        <th>Тайлбар</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for h in history %}
+                    <tr>
+                        <td>{{ h.created_at|date:"Y-m-d H:i" }}</td>
+                        <td>{{ h.actor.get_full_name|default:h.actor.username|default:"—" }}</td>
+                        <td>{{ h.get_action_display }}</td>
+                        <td>{{ h.comment|default:"—" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="doc-footer">
+            Энэхүү баримт бичиг нь цахим өргөдлийн системээс үүсгэгдсэн болно &nbsp;|&nbsp; {{ app.app_number }}
+        </div>
+
+    </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.pyc
+
+# Django / local data
+db.sqlite3
+media/
+
+# Env / secrets
+.env
+credentials.txt
+
+# Pytest
+.pytest_cache/
+
+# Misc
+.DS_Store
+Thumbs.db

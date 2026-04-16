@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" fill="none">
+  <!-- Баримт бичгийн хуудас -->
+  <rect x="4" y="2" width="25" height="32" rx="3" fill="#6366f1"/>
+  <!-- Нүүрний харанхуй тал (fold) -->
+  <path d="M23 2l6 6h-6V2z" fill="#4f46e5"/>
+  <rect x="23" y="2" width="6" height="6" rx="0" fill="#8b5cf6"/>
+  <path d="M23 2l6 6H23V2z" fill="#4f46e5"/>
+  <!-- Мөрүүд -->
+  <rect x="9" y="13" width="14" height="2" rx="1" fill="white" fill-opacity="0.9"/>
+  <rect x="9" y="18" width="14" height="2" rx="1" fill="white" fill-opacity="0.9"/>
+  <rect x="9" y="23" width="10" height="2" rx="1" fill="white" fill-opacity="0.7"/>
+  <!-- Зөвшөөрлийн дугуй тэмдэг -->
+  <circle cx="31" cy="31" r="7" fill="#10b981"/>
+  <path d="M27.5 31l2.5 2.5 4.5-4.5" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

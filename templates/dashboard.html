@@ -1,0 +1,550 @@
+{% extends 'base.html' %}
+{% block title %}Хяналтын самбар{% endblock %}
+{% block page_title %}Хяналтын самбар{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1">Сайн байна уу, {{ user.get_full_name|default:user.username }} 👋</h4>
+        <p class="text-muted mb-0" style="font-size:13px">
+            <span class="badge bg-primary bg-opacity-10 text-primary">{{ user.get_role_display }}</span>
+            {% if user.department %} · {{ user.department }}{% endif %}
+        </p>
+    </div>
+    {% if user.is_employee %}
+    <a href="{% url 'application_new' %}" class="btn btn-primary">
+        <i class="bi bi-plus-lg me-1"></i>Шинэ өргөдөл
+    </a>
+    {% endif %}
+</div>
+
+{# =================== EMPLOYEE =================== #}
+{% if user.is_employee %}
+
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg">
+        <div class="stat-card stat-card-indigo h-100">
+            <div class="stat-icon"><i class="bi bi-folder2-open"></i></div>
+            <div class="stat-value">{{ total }}</div>
+            <div class="stat-label">Нийт өргөдөл</div>
+            {% if draft_count > 0 %}
+            <div class="mt-1" style="font-size:11px;opacity:.75">
+                <i class="bi bi-pencil-square me-1"></i>{{ draft_count }} ноорог
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    <div class="col-6 col-lg">
+        <div class="stat-card stat-card-emerald h-100">
+            <div class="stat-icon"><i class="bi bi-check2-circle"></i></div>
+            <div class="stat-value">{{ approved_count }}</div>
+            <div class="stat-label">Зөвшөөрсөн</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg">
+        <div class="stat-card stat-card-cyan h-100">
+            <div class="stat-icon"><i class="bi bi-arrow-right-circle"></i></div>
+            <div class="stat-value">{{ forwarded_count }}</div>
+            <div class="stat-label">Дамжуулагдсан</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg">
+        <div class="stat-card stat-card-amber h-100">
+            <div class="stat-icon"><i class="bi bi-arrow-return-left"></i></div>
+            <div class="stat-value">{{ returned_count }}</div>
+            <div class="stat-label">Буцаагдсан</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg">
+        <div class="stat-card stat-card-rose h-100">
+            <div class="stat-icon"><i class="bi bi-x-circle"></i></div>
+            <div class="stat-value">{{ rejected_count }}</div>
+            <div class="stat-label">Татгалзсан</div>
+        </div>
+    </div>
+</div>
+
+{# Сүүлийн өргөдлүүд — дээр #}
+<div class="card border-0 mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="d-flex align-items-center gap-2">
+            <i class="bi bi-clock-history text-primary"></i>Сүүлийн өргөдлүүд
+        </span>
+        {% if total > 6 %}
+        <a href="{% url 'application_list' %}" class="btn btn-sm btn-outline-primary" style="font-size:12px">Бүгдийг харах</a>
+        {% endif %}
+    </div>
+    <div class="card-body p-0">
+        {% if my_apps %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr><th>Дугаар</th><th>Гарчиг</th><th>Төрөл</th><th>Төлөв</th><th>Огноо</th><th></th></tr>
+                </thead>
+                <tbody>
+                    {% for app in my_apps %}
+                    <tr>
+                        <td><span class="font-monospace" style="font-size:12px">{{ app.app_number }}</span></td>
+                        <td>{{ app.title|truncatechars:30 }}</td>
+                        <td style="font-size:12px">{{ app.app_type.name }}</td>
+                        <td><span class="badge bg-{{ app.status_badge }}">{{ app.get_status_display }}</span></td>
+                        <td class="text-muted" style="font-size:12px">{{ app.created_at|date:"m/d" }}</td>
+                        <td><a href="{% url 'application_detail' app.pk %}" class="btn btn-sm btn-outline-primary py-0 px-2"><i class="bi bi-eye"></i></a></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5 text-muted">
+            <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+            Одоогоор өргөдөл байхгүй байна.
+            <div class="mt-3"><a href="{% url 'application_new' %}" class="btn btn-primary btn-sm">Шинэ өргөдөл үүсгэх</a></div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{# Графикууд — доор #}
+<div class="row g-3">
+    <div class="col-lg-8">
+        <div class="card border-0 h-100">
+            <div class="card-header d-flex align-items-center gap-2">
+                <i class="bi bi-graph-up text-primary"></i>Өргөдлийн төлөв (сараар)
+            </div>
+            <div class="card-body">
+                <div class="chart-container" style="height:220px">
+                    <canvas id="chartMonthly"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card border-0 h-100">
+            <div class="card-header d-flex align-items-center gap-2">
+                <i class="bi bi-pie-chart text-primary"></i>Төлөвийн харьцаа
+            </div>
+            <div class="card-body d-flex align-items-center justify-content-center">
+                <div class="chart-container" style="height:200px;width:200px">
+                    <canvas id="chartStatus"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# =================== HR =================== #}
+{% elif user.is_hr %}
+
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+        <div class="stat-card stat-card-amber h-100">
+            <div class="stat-icon"><i class="bi bi-hourglass-split"></i></div>
+            <div class="stat-value">{{ submitted_count }}</div>
+            <div class="stat-label">Хүлээгдэж буй</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="stat-card stat-card-cyan h-100">
+            <div class="stat-icon"><i class="bi bi-arrow-right-circle"></i></div>
+            <div class="stat-value">{{ forwarded_count }}</div>
+            <div class="stat-label">Дамжуулагдсан</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="stat-card stat-card-emerald h-100">
+            <div class="stat-icon"><i class="bi bi-check2-all"></i></div>
+            <div class="stat-value">{{ approved_count }}</div>
+            <div class="stat-label">Зөвшөөрсөн</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="stat-card stat-card-slate h-100">
+            <div class="stat-icon"><i class="bi bi-folder2-open"></i></div>
+            <div class="stat-value">{{ total }}</div>
+            <div class="stat-label">Нийт өргөдөл</div>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="d-flex align-items-center gap-2">
+            <i class="bi bi-hourglass-split text-warning"></i>Хүлээгдэж буй өргөдлүүд
+        </span>
+        <a href="{% url 'application_list' %}?status=submitted" class="btn btn-sm btn-outline-primary" style="font-size:12px">Бүгд</a>
+    </div>
+    <div class="card-body p-0">
+        {% if pending_apps %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead><tr><th>Дугаар</th><th>Гарчиг</th><th>Ажилтан</th><th>Ач холбогдол</th><th>Огноо</th><th></th></tr></thead>
+                <tbody>
+                    {% for app in pending_apps %}
+                    <tr>
+                        <td><span class="font-monospace" style="font-size:12px">{{ app.app_number }}</span></td>
+                        <td>{{ app.title|truncatechars:35 }}</td>
+                        <td>{{ app.user.get_full_name|default:app.user.username }}</td>
+                        <td><span class="badge bg-{{ app.priority_badge }}">{{ app.get_priority_display }}</span></td>
+                        <td class="text-muted" style="font-size:12px">{{ app.created_at|date:"Y-m-d" }}</td>
+                        <td><a href="{% url 'application_detail' app.pk %}" class="btn btn-sm btn-outline-primary py-0 px-2"><i class="bi bi-eye"></i></a></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-4 text-muted">
+            <i class="bi bi-check-circle fs-2 d-block mb-2 text-success"></i>Хүлээгдэж буй өргөдөл байхгүй
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-8">
+        <div class="card border-0 h-100">
+            <div class="card-header d-flex align-items-center gap-2">
+                <i class="bi bi-graph-up text-primary"></i>Өргөдлийн төлөв (сараар)
+            </div>
+            <div class="card-body">
+                <div class="chart-container" style="height:220px">
+                    <canvas id="chartMonthly"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card border-0 h-100">
+            <div class="card-header d-flex align-items-center gap-2">
+                <i class="bi bi-pie-chart text-primary"></i>Төлөвийн харьцаа
+            </div>
+            <div class="card-body d-flex align-items-center justify-content-center">
+                <div class="chart-container" style="height:200px;width:200px">
+                    <canvas id="chartStatus"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# =================== ADMIN =================== #}
+{% elif user.is_admin_role %}
+
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-4">
+        <div class="stat-card stat-card-cyan h-100">
+            <div class="stat-icon"><i class="bi bi-inbox-fill"></i></div>
+            <div class="stat-value">{{ forwarded_count }}</div>
+            <div class="stat-label">Шийдвэрлэх шаардлагатай</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-4">
+        <div class="stat-card stat-card-emerald h-100">
+            <div class="stat-icon"><i class="bi bi-check2-circle"></i></div>
+            <div class="stat-value">{{ approved_count }}</div>
+            <div class="stat-label">Зөвшөөрсөн</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-4">
+        <div class="stat-card stat-card-rose h-100">
+            <div class="stat-icon"><i class="bi bi-x-circle"></i></div>
+            <div class="stat-value">{{ rejected_count }}</div>
+            <div class="stat-label">Татгалзсан</div>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="d-flex align-items-center gap-2">
+            <i class="bi bi-inbox-fill text-info"></i>Шийдвэрлэх өргөдлүүд
+        </span>
+        <a href="{% url 'application_list' %}?status=forwarded" class="btn btn-sm btn-outline-info" style="font-size:12px">Бүгд</a>
+    </div>
+    <div class="card-body p-0">
+        {% if pending_apps %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead><tr><th>Дугаар</th><th>Гарчиг</th><th>Ажилтан</th><th>Ач холбогдол</th><th>Огноо</th><th></th></tr></thead>
+                <tbody>
+                    {% for app in pending_apps %}
+                    <tr>
+                        <td><span class="font-monospace" style="font-size:12px">{{ app.app_number }}</span></td>
+                        <td>{{ app.title|truncatechars:35 }}</td>
+                        <td>{{ app.user.get_full_name|default:app.user.username }}</td>
+                        <td><span class="badge bg-{{ app.priority_badge }}">{{ app.get_priority_display }}</span></td>
+                        <td class="text-muted" style="font-size:12px">{{ app.created_at|date:"Y-m-d" }}</td>
+                        <td><a href="{% url 'application_detail' app.pk %}" class="btn btn-sm btn-outline-primary py-0 px-2"><i class="bi bi-eye"></i></a></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-4 text-muted">
+            <i class="bi bi-check-circle fs-2 d-block mb-2 text-success"></i>Шийдвэрлэх өргөдөл байхгүй
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-8">
+        <div class="card border-0 h-100">
+            <div class="card-header d-flex align-items-center gap-2">
+                <i class="bi bi-graph-up text-primary"></i>Өргөдлийн төлөв (сараар)
+            </div>
+            <div class="card-body">
+                <div class="chart-container" style="height:220px">
+                    <canvas id="chartMonthly"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card border-0 h-100">
+            <div class="card-header d-flex align-items-center gap-2">
+                <i class="bi bi-pie-chart text-primary"></i>Төлөвийн харьцаа
+            </div>
+            <div class="card-body d-flex align-items-center justify-content-center">
+                <div class="chart-container" style="height:200px;width:200px">
+                    <canvas id="chartStatus"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# =================== SYSADMIN =================== #}
+{% elif user.is_sysadmin %}
+
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+        <div class="stat-card stat-card-indigo h-100">
+            <div class="stat-icon"><i class="bi bi-people"></i></div>
+            <div class="stat-value">{{ user_count }}</div>
+            <div class="stat-label">Нийт хэрэглэгч</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="stat-card stat-card-slate h-100">
+            <div class="stat-icon"><i class="bi bi-folder2-open"></i></div>
+            <div class="stat-value">{{ total }}</div>
+            <div class="stat-label">Нийт өргөдөл</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="stat-card stat-card-amber h-100">
+            <div class="stat-icon"><i class="bi bi-hourglass-split"></i></div>
+            <div class="stat-value">{{ submitted_count }}</div>
+            <div class="stat-label">Хүлээгдэж буй</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="stat-card stat-card-emerald h-100">
+            <div class="stat-icon"><i class="bi bi-check2-circle"></i></div>
+            <div class="stat-value">{{ approved_count }}</div>
+            <div class="stat-label">Зөвшөөрсөн</div>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="d-flex align-items-center gap-2">
+            <i class="bi bi-list-ul text-primary"></i>Сүүлийн өргөдлүүд
+        </span>
+        <a href="{% url 'application_list' %}" class="btn btn-sm btn-outline-primary" style="font-size:12px">Бүгдийг харах</a>
+    </div>
+    <div class="card-body p-0">
+        {% if recent_apps %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead><tr><th>Дугаар</th><th>Гарчиг</th><th>Ажилтан</th><th>Төлөв</th><th>Огноо</th><th></th></tr></thead>
+                <tbody>
+                    {% for app in recent_apps %}
+                    <tr>
+                        <td><span class="font-monospace" style="font-size:12px">{{ app.app_number }}</span></td>
+                        <td>{{ app.title|truncatechars:32 }}</td>
+                        <td style="font-size:13px">{{ app.user.get_full_name|default:app.user.username }}</td>
+                        <td><span class="badge bg-{{ app.status_badge }}">{{ app.get_status_display }}</span></td>
+                        <td class="text-muted" style="font-size:12px">{{ app.created_at|date:"Y-m-d" }}</td>
+                        <td><a href="{% url 'application_detail' app.pk %}" class="btn btn-sm btn-outline-primary py-0 px-2"><i class="bi bi-eye"></i></a></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5 text-muted">
+            <i class="bi bi-inbox fs-1 d-block mb-2"></i>Өргөдөл байхгүй байна.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-8">
+        <div class="card border-0 h-100">
+            <div class="card-header d-flex align-items-center gap-2">
+                <i class="bi bi-graph-up text-primary"></i>Өргөдлийн төлөв (сараар)
+            </div>
+            <div class="card-body">
+                <div class="chart-container" style="height:220px">
+                    <canvas id="chartMonthly"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card border-0 h-100">
+            <div class="card-header d-flex align-items-center gap-2">
+                <i class="bi bi-pie-chart text-primary"></i>Төлөвийн харьцаа
+            </div>
+            <div class="card-body d-flex align-items-center justify-content-center">
+                <div class="chart-container" style="height:200px;width:200px">
+                    <canvas id="chartStatus"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+Chart.defaults.font.family = "'Segoe UI', system-ui, sans-serif";
+Chart.defaults.font.size = 12;
+
+const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+const gridColor  = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)';
+const labelColor = isDark ? '#94a3b8' : '#64748b';
+const PALETTE = ['#6366f1','#10b981','#f59e0b','#ef4444','#3b82f6','#8b5cf6','#06b6d4','#f43f5e','#84cc16'];
+
+// Сарын stacked баганан диаграм (статусаар задарсан)
+{% if chart_monthly %}
+(function () {
+    const raw = {{ chart_monthly|safe }};
+    const ctx = document.getElementById('chartMonthly');
+    if (!ctx || !raw.datasets || raw.datasets.length === 0) return;
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: raw.labels,
+            datasets: raw.datasets.map(ds => ({
+                label: ds.label,
+                data: ds.data,
+                backgroundColor: ds.color,
+                borderRadius: 3,
+                borderSkipped: false,
+            }))
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'bottom',
+                    labels: {
+                        color: labelColor,
+                        boxWidth: 10,
+                        padding: 8,
+                        font: { size: 11 }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    stacked: true,
+                    grid: { display: false },
+                    ticks: { color: labelColor }
+                },
+                y: {
+                    stacked: true,
+                    grid: { color: gridColor },
+                    ticks: { color: labelColor, stepSize: 1, precision: 0 },
+                    beginAtZero: true,
+                }
+            }
+        }
+    });
+})();
+{% endif %}
+
+// Төлөвийн donut диаграм
+{% if chart_status %}
+(function () {
+    const raw = {{ chart_status|safe }};
+    const ctx = document.getElementById('chartStatus');
+    if (!ctx || raw.labels.length === 0) return;
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: raw.labels,
+            datasets: [{
+                data: raw.data,
+                backgroundColor: PALETTE,
+                borderWidth: 2,
+                borderColor: isDark ? '#1e293b' : '#ffffff',
+                hoverOffset: 6,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '68%',
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: { color: labelColor, boxWidth: 10, padding: 8, font: { size: 11 } }
+                }
+            }
+        }
+    });
+})();
+{% endif %}
+
+// Төрлийн хэвтээ баганан диаграм (employee)
+{% if chart_type %}
+(function () {
+    const raw = {{ chart_type|safe }};
+    const ctx = document.getElementById('chartType');
+    if (!ctx || raw.labels.length === 0) return;
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: raw.labels,
+            datasets: [{
+                label: 'Тоо',
+                data: raw.data,
+                backgroundColor: PALETTE.slice(0, raw.data.length),
+                borderRadius: 6,
+                borderSkipped: false,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            indexAxis: 'y',
+            plugins: { legend: { display: false } },
+            scales: {
+                x: {
+                    grid: { color: gridColor },
+                    ticks: { color: labelColor, stepSize: 1, precision: 0 },
+                    beginAtZero: true,
+                },
+                y: {
+                    grid: { display: false },
+                    ticks: { color: labelColor, font: { size: 11 } }
+                }
+            }
+        }
+    });
+})();
+{% endif %}
+</script>
+{% endblock %}

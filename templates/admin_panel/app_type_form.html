@@ -1,0 +1,266 @@
+{% extends 'base.html' %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="d-flex align-items-center mb-3">
+            <a href="{% url 'app_type_list' %}" class="btn btn-outline-secondary btn-sm me-2">
+                <i class="bi bi-arrow-left"></i>
+            </a>
+            <h4 class="fw-bold mb-0">{{ title }}</h4>
+        </div>
+
+        <form method="post" id="typeForm">
+            {% csrf_token %}
+
+            {# ── Үндсэн мэдээлэл ──────────────────────────────────────── #}
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-header bg-transparent fw-semibold">
+                    <i class="bi bi-info-circle me-2"></i>Үндсэн мэдээлэл
+                </div>
+                <div class="card-body">
+                    {% for field in form %}
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}
+                        <div class="text-danger small">{{ field.errors|join:", " }}</div>
+                        {% endif %}
+                        {% if field.name == 'target_department' %}
+                        <div class="form-text">
+                            Хоосон = Бүх захирлуудыг харуулна.
+                            "Тухайн ажилтны хэлтэс" = Ажилтантай ижил хэлтсийн захирлыг харуулна.
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            {# ── Нэмэлт талбарын тодорхойлолт (Field Builder) ────────── #}
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-header bg-transparent fw-semibold d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-card-list me-2"></i>Өргөдлийн маягтын нэмэлт талбарууд</span>
+                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="addField()">
+                        <i class="bi bi-plus-lg me-1"></i>Талбар нэмэх
+                    </button>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small mb-3">
+                        Ажилтан өргөдөл бичихэд гарч ирэх нэмэлт талбаруудыг энд тодорхойлно.
+                        Жишээ нь: огноо, мөнгөн дүн, текст, сонголт гэх мэт.
+                    </p>
+
+                    {# Талбарын жагсаалт — JS-ээр дүүргэгдэнэ #}
+                    <div id="fieldsContainer"></div>
+
+                    {# Хоосон бол харуулах мессеж #}
+                    <div id="emptyMessage" class="text-center text-muted py-3 small">
+                        <i class="bi bi-plus-circle me-1"></i>
+                        Нэмэлт талбар байхгүй. "Талбар нэмэх" товчийг дарна уу.
+                    </div>
+
+                    {# required_fields-ийн JSON-г hidden input-д хадгалж POST-оор дамжуулна #}
+                    <input type="hidden" name="required_fields_json" id="required_fields_json" value="">
+                </div>
+            </div>
+
+            {# ── Хадгалах товч ─────────────────────────────────────────── #}
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-lg me-1"></i>Хадгалах
+                </button>
+                <a href="{% url 'app_type_list' %}" class="btn btn-outline-secondary">Болих</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ── Одоогийн талбарын тодорхойлолт (засах үед серверээс ирнэ) ─────────────
+let fields = {{ existing_fields_json|safe }};
+
+// Дэмжигдэх талбарын төрлүүд
+const FIELD_TYPES = [
+    { value: 'text',     label: 'Текст' },
+    { value: 'textarea', label: 'Урт текст' },
+    { value: 'number',   label: 'Тоо' },
+    { value: 'date',     label: 'Огноо' },
+    { value: 'select',   label: 'Сонголт (dropdown)' },
+];
+
+// ── Шинэ талбар нэмэх ─────────────────────────────────────────────────────
+function addField() {
+    fields.push({
+        key: '',
+        label: '',
+        type: 'text',
+        required: false,
+        options: [],
+    });
+    renderFields();
+}
+
+// ── Талбар устгах ─────────────────────────────────────────────────────────
+function removeField(index) {
+    fields.splice(index, 1);
+    renderFields();
+}
+
+// ── Сонголтын мөр нэмэх (type=select талбарт) ────────────────────────────
+function addOption(index) {
+    if (!fields[index].options) fields[index].options = [];
+    fields[index].options.push('');
+    renderFields();
+}
+
+// ── Сонголтын мөр устгах ─────────────────────────────────────────────────
+function removeOption(fieldIndex, optIndex) {
+    fields[fieldIndex].options.splice(optIndex, 1);
+    renderFields();
+}
+
+// ── Бүх input-уудаас одоогийн утгыг цуглуулна ────────────────────────────
+function collectFields() {
+    let result = [];
+    document.querySelectorAll('.field-row').forEach(function(row, i) {
+        let key     = row.querySelector('.f-key').value.trim();
+        let label   = row.querySelector('.f-label').value.trim();
+        let type    = row.querySelector('.f-type').value;
+        let required = row.querySelector('.f-required').checked;
+        let options = [];
+        row.querySelectorAll('.f-option').forEach(function(opt) {
+            let v = opt.value.trim();
+            if (v) options.push(v);
+        });
+        // key хоосон байвал оруулахгүй
+        if (key) {
+            result.push({ key, label, type, required, options });
+        }
+    });
+    return result;
+}
+
+// ── Дэлгэцэнд талбаруудыг зурна ──────────────────────────────────────────
+function renderFields() {
+    let container = document.getElementById('fieldsContainer');
+    let empty     = document.getElementById('emptyMessage');
+
+    if (fields.length === 0) {
+        container.innerHTML = '';
+        empty.style.display = '';
+        syncHidden();
+        return;
+    }
+    empty.style.display = 'none';
+
+    let html = '';
+    fields.forEach(function(f, i) {
+        // Талбарын төрлийн select HTML
+        let typeOpts = FIELD_TYPES.map(function(t) {
+            return '<option value="' + t.value + '"' + (f.type === t.value ? ' selected' : '') + '>'
+                   + t.label + '</option>';
+        }).join('');
+
+        // Сонголтын мөрүүд (зөвхөн type=select үед харуулна)
+        let optionsHtml = '';
+        if (f.type === 'select') {
+            let opts = (f.options || []);
+            let optRows = opts.map(function(o, oi) {
+                return '<div class="d-flex gap-1 mb-1 option-row">'
+                    + '<input type="text" class="form-control form-control-sm f-option"'
+                    + ' value="' + escHtml(o) + '" placeholder="Сонголтын утга"'
+                    + ' onchange="captureAndRender()">'
+                    + '<button type="button" class="btn btn-sm btn-outline-danger"'
+                    + ' onclick="removeOption(' + i + ',' + oi + ')">'
+                    + '<i class="bi bi-x"></i></button>'
+                    + '</div>';
+            }).join('');
+            optionsHtml = '<div class="mt-2 ms-1">'
+                + '<div class="text-muted small mb-1">Сонголтын утгууд:</div>'
+                + (optRows || '<div class="text-muted small fst-italic mb-1">Сонголт байхгүй</div>')
+                + '<button type="button" class="btn btn-sm btn-outline-secondary mt-1"'
+                + ' onclick="addOption(' + i + ')">'
+                + '<i class="bi bi-plus me-1"></i>Сонголт нэмэх</button>'
+                + '</div>';
+        }
+
+        html += '<div class="field-row border rounded p-3 mb-2 bg-light">'
+            // Дээд мөр: гарчиг + устгах
+            + '<div class="d-flex justify-content-between align-items-center mb-2">'
+            + '<span class="fw-semibold small text-muted">Талбар ' + (i + 1) + '</span>'
+            + '<button type="button" class="btn btn-sm btn-outline-danger" onclick="removeField(' + i + ')">'
+            + '<i class="bi bi-trash"></i></button>'
+            + '</div>'
+            // Мөр 1: key + label
+            + '<div class="row g-2 mb-2">'
+            + '<div class="col-sm-4">'
+            + '<label class="form-label small fw-semibold">Талбарын нэр (key) <span class="text-danger">*</span></label>'
+            + '<input type="text" class="form-control form-control-sm f-key"'
+            + ' value="' + escHtml(f.key) + '" placeholder="Жишээ: purpose"'
+            + ' onchange="captureAndRender()" pattern="[a-z_]+"'
+            + ' title="Зөвхөн жижиг латин үсэг болон доогуур зураас">'
+            + '<div class="form-text" style="font-size:11px">Жижиг латин + _ зөвхөн</div>'
+            + '</div>'
+            + '<div class="col-sm-8">'
+            + '<label class="form-label small fw-semibold">Харуулах гарчиг</label>'
+            + '<input type="text" class="form-control form-control-sm f-label"'
+            + ' value="' + escHtml(f.label) + '" placeholder="Жишээ: Зориулалт"'
+            + ' onchange="captureAndRender()">'
+            + '</div>'
+            + '</div>'
+            // Мөр 2: type + required
+            + '<div class="row g-2">'
+            + '<div class="col-sm-6">'
+            + '<label class="form-label small fw-semibold">Талбарын төрөл</label>'
+            + '<select class="form-select form-select-sm f-type" onchange="captureAndRender()">'
+            + typeOpts + '</select>'
+            + '</div>'
+            + '<div class="col-sm-6 d-flex align-items-end pb-1">'
+            + '<div class="form-check">'
+            + '<input type="checkbox" class="form-check-input f-required" id="req_' + i + '"'
+            + (f.required ? ' checked' : '') + ' onchange="captureAndRender()">'
+            + '<label class="form-check-label small" for="req_' + i + '">Заавал бөглөх</label>'
+            + '</div>'
+            + '</div>'
+            + '</div>'
+            // Сонголтын мөрүүд
+            + optionsHtml
+            + '</div>';
+    });
+    container.innerHTML = html;
+    syncHidden();
+}
+
+// ── Input өөрчлөгдөхөд одоогийн утгыг цуглуулж дахин зурна ──────────────
+function captureAndRender() {
+    fields = collectFields();
+    renderFields();
+}
+
+// ── Hidden input-д JSON бичих ─────────────────────────────────────────────
+function syncHidden() {
+    document.getElementById('required_fields_json').value = JSON.stringify(fields);
+}
+
+// ── HTML special characters-ийг escape хийх ──────────────────────────────
+function escHtml(s) {
+    return String(s || '')
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
+
+// ── Form submit болохоос өмнө hidden input-г шинэчилнэ ───────────────────
+document.getElementById('typeForm').addEventListener('submit', function() {
+    fields = collectFields();
+    syncHidden();
+});
+
+// ── Хуудас ачааллахад одоогийн талбаруудыг зурна ─────────────────────────
+renderFields();
+</script>
+{% endblock %}

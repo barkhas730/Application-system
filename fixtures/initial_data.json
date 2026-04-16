@@ -1,0 +1,182 @@
+[
+  {
+    "model": "applications.applicationtype",
+    "pk": 1,
+    "fields": {
+      "name": "Ажилласан хугацааны тодорхойлолт авах хүсэлт",
+      "description": "",
+      "required_fields": ["purpose"],
+      "requires_attachment": false,
+      "is_active": true,
+      "created_at": "2026-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "applications.applicationtype",
+    "pk": 2,
+    "fields": {
+      "name": "Ажилтны албан тушаал өөрчлөх хүсэлт",
+      "description": "",
+      "required_fields": ["employee_name", "current_position", "new_position", "change_type", "reason"],
+      "requires_attachment": false,
+      "is_active": true,
+      "created_at": "2026-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "applications.applicationtype",
+    "pk": 3,
+    "fields": {
+      "name": "Гадаад томилолтын зөвшөөрлийн хүсэлт",
+      "description": "",
+      "required_fields": ["destination_country", "travel_purpose", "travel_start", "travel_end"],
+      "requires_attachment": false,
+      "is_active": true,
+      "created_at": "2026-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "applications.applicationtype",
+    "pk": 4,
+    "fields": {
+      "name": "Гэрээ батлуулах хүсэлт",
+      "description": "",
+      "required_fields": ["contract_type", "counterparty", "summary"],
+      "requires_attachment": true,
+      "is_active": true,
+      "created_at": "2026-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "applications.applicationtype",
+    "pk": 5,
+    "fields": {
+      "name": "Зардлын нөхөн төлбөрийн хүсэлт",
+      "description": "",
+      "required_fields": ["expense_type", "expense_amount", "expense_date"],
+      "requires_attachment": true,
+      "is_active": true,
+      "created_at": "2026-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "applications.applicationtype",
+    "pk": 6,
+    "fields": {
+      "name": "Засвар үйлчилгээний хүсэлт",
+      "description": "",
+      "required_fields": ["location", "issue_type", "description"],
+      "requires_attachment": false,
+      "is_active": true,
+      "created_at": "2026-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "applications.applicationtype",
+    "pk": 7,
+    "fields": {
+      "name": "Илүү цаг ажилласны зөвшөөрлийн хүсэлт",
+      "description": "",
+      "required_fields": ["overtime_date", "hours", "reason"],
+      "requires_attachment": false,
+      "is_active": true,
+      "created_at": "2026-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "applications.applicationtype",
+    "pk": 8,
+    "fields": {
+      "name": "Системд нэвтрэх эрх авах хүсэлт",
+      "description": "",
+      "required_fields": ["system_name", "access_type", "reason"],
+      "requires_attachment": false,
+      "is_active": true,
+      "created_at": "2026-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "applications.applicationtype",
+    "pk": 9,
+    "fields": {
+      "name": "Сургалтад хамрагдах хүсэлт",
+      "description": "",
+      "required_fields": ["training_name", "training_org", "training_date"],
+      "requires_attachment": false,
+      "is_active": true,
+      "created_at": "2026-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "applications.applicationtype",
+    "pk": 10,
+    "fields": {
+      "name": "Тоног төхөөрөмжийн хүсэлт",
+      "description": "",
+      "required_fields": ["item_name", "quantity", "reason"],
+      "requires_attachment": false,
+      "is_active": true,
+      "created_at": "2026-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "applications.applicationtype",
+    "pk": 11,
+    "fields": {
+      "name": "Хангамж, материалын хүсэлт",
+      "description": "",
+      "required_fields": ["item_name", "quantity", "purpose"],
+      "requires_attachment": false,
+      "is_active": true,
+      "created_at": "2026-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "applications.applicationtype",
+    "pk": 12,
+    "fields": {
+      "name": "Цалингийн тодорхойлолт авах хүсэлт",
+      "description": "",
+      "required_fields": ["purpose"],
+      "requires_attachment": false,
+      "is_active": true,
+      "created_at": "2026-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "applications.applicationtype",
+    "pk": 13,
+    "fields": {
+      "name": "Цалингийн урьдчилгаа авах хүсэлт",
+      "description": "",
+      "required_fields": ["advance_amount", "reason", "repayment_months"],
+      "requires_attachment": false,
+      "is_active": true,
+      "created_at": "2026-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "applications.applicationtype",
+    "pk": 14,
+    "fields": {
+      "name": "Чөлөө авах хүсэлт",
+      "description": "",
+      "required_fields": ["leave_type", "leave_start", "leave_end", "leave_reason"],
+      "requires_attachment": false,
+      "is_active": true,
+      "created_at": "2026-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "applications.applicationtype",
+    "pk": 15,
+    "fields": {
+      "name": "Шинэ ажилтан авах хүсэлт",
+      "description": "",
+      "required_fields": ["position", "headcount", "requirements"],
+      "requires_attachment": false,
+      "is_active": true,
+      "created_at": "2026-01-01T00:00:00Z"
+    }
+  }
+]

@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+{% block title %}{{ action_label }}{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        <div class="d-flex align-items-center mb-3">
+            <a href="{% url 'application_detail' app.pk %}" class="btn btn-outline-secondary btn-sm me-2"><i class="bi bi-arrow-left"></i></a>
+            <h4 class="fw-bold mb-0">{{ action_label }}: {{ app.app_number }}</h4>
+        </div>
+        <div class="card border-0">
+            <div class="card-body p-4">
+                <div class="alert alert-info mb-4">
+                    <strong>{{ app.app_number }}</strong> — {{ app.title }}<br>
+                    <small class="text-muted">{{ app.user.get_full_name|default:app.user.username }} · {{ app.app_type.name }}</small>
+                </div>
+
+                {% if action == 'forward' %}
+                <form method="post">
+                    {% csrf_token %}
+                    {% if app.assigned_to %}
+                    <div class="alert alert-info mb-3">
+                        <i class="bi bi-person-fill me-2"></i>
+                        Ажилтан <strong>{{ app.assigned_to.get_full_name|default:app.assigned_to.username }}</strong> — {{ app.assigned_to.department }} — {{ app.assigned_to.get_role_display }}-г сонгосон байна.
+                    </div>
+                    {% endif %}
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">
+                            Шийдвэрлэх албан тушаалтан сонгох <span class="text-danger">*</span>
+                        </label>
+                        <select name="assigned_to" class="form-select" required>
+                            <option value="">— Сонгоно уу —</option>
+                            {% for admin in admin_users %}
+                            <option value="{{ admin.pk }}" {% if app.assigned_to and app.assigned_to.pk == admin.pk %}selected{% endif %}>
+                                {{ admin.get_full_name|default:admin.username }}{% if admin.department %} - {{ admin.department }}{% endif %} - {{ admin.get_role_display }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        {% if not admin_users %}
+                        <div class="form-text text-danger">Идэвхтэй захирал / ахлах ажилтан байхгүй байна.</div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Нэмэлт тэмдэглэл</label>
+                        <textarea name="comment" class="form-control" rows="3"
+                                  placeholder="Захиралд зориулсан нэмэлт тайлбар..."></textarea>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-info text-white" {% if not admin_users %}disabled{% endif %}>
+                            <i class="bi bi-arrow-right-circle me-2"></i>Захиргаанд дамжуулах
+                        </button>
+                        <a href="{% url 'application_detail' app.pk %}" class="btn btn-outline-secondary">Болих</a>
+                    </div>
+                </form>
+
+                {% elif action == 'return' %}
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Буцаах шалтгаан <span class="text-danger">*</span></label>
+                        {{ form.comment }}
+                    </div>
+                    {% if app.return_count >= 2 %}
+                    <div class="alert alert-warning mb-3">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        Анхааруулга: Энэ {{ app.return_count|add:"1" }} дахь буцаалт бөгөөд өргөдөл автоматаар татгалзагдана.
+                    </div>
+                    {% endif %}
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-warning">
+                            <i class="bi bi-arrow-return-left me-2"></i>Буцаах
+                        </button>
+                        <a href="{% url 'application_detail' app.pk %}" class="btn btn-outline-secondary">Болих</a>
+                    </div>
+                </form>
+
+                {% elif action == 'decide' %}
+                <form method="post" id="decideForm">
+                    {% csrf_token %}
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">
+                            Тайлбар <span class="text-muted small">(татгалзах тохиолдолд заавал)</span>
+                        </label>
+                        {{ form.comment }}
+                    </div>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <button type="submit" name="decision" value="approve" class="btn btn-success"
+                                onclick="return confirm('Зөвшөөрөхдөө итгэлтэй байна уу?')">
+                            <i class="bi bi-check-circle me-2"></i>Зөвшөөрөх
+                        </button>
+                        <button type="submit" name="decision" value="reject" class="btn btn-danger"
+                                onclick="return validateReject()">
+                            <i class="bi bi-x-circle me-2"></i>Татгалзах
+                        </button>
+                        <a href="{% url 'application_detail' app.pk %}" class="btn btn-outline-secondary">Болих</a>
+                    </div>
+                </form>
+                <script>
+                function validateReject() {
+                    const c = document.getElementById('id_comment').value.trim();
+                    if (!c) { alert('Татгалзах тайлбар заавал бичнэ үү.'); return false; }
+                    return confirm('Татгалзахдаа итгэлтэй байна уу?');
+                }
+                </script>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

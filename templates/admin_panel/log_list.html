@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% load query_tags %}
+{% block title %}Системийн лог{% endblock %}
+{% block page_title %}Системийн лог{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0"><i class="bi bi-journal-text me-2 text-primary"></i>Системийн лог</h4>
+</div>
+
+<div class="card border-0 mb-4">
+    <div class="card-body py-3">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-sm-3">
+                <label class="form-label" style="font-size:11px;text-transform:uppercase;letter-spacing:.05em">Хайх</label>
+                <input type="text" name="q" class="form-control form-control-sm"
+                       placeholder="Хэрэглэгч, тайлбар..." value="{{ q }}">
+            </div>
+            <div class="col-sm-2">
+                <label class="form-label" style="font-size:11px;text-transform:uppercase;letter-spacing:.05em">Үйлдлийн төрөл</label>
+                <select name="action" class="form-select form-select-sm">
+                    <option value="">Бүх үйлдэл</option>
+                    {% for code, label in action_choices %}
+                    <option value="{{ code }}" {% if action == code %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-sm-2">
+                <label class="form-label" style="font-size:11px;text-transform:uppercase;letter-spacing:.05em">Эхлэх огноо</label>
+                <input type="date" name="date_from" class="form-control form-control-sm" value="{{ date_from }}">
+            </div>
+            <div class="col-sm-2">
+                <label class="form-label" style="font-size:11px;text-transform:uppercase;letter-spacing:.05em">Дуусах огноо</label>
+                <input type="date" name="date_to" class="form-control form-control-sm" value="{{ date_to }}">
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-search me-1"></i>Хайх</button>
+                <a href="{% url 'log_list' %}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-x-lg"></i></a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card border-0">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr><th>Огноо</th><th>Хэрэглэгч</th><th>Үйлдэл</th><th>Тайлбар</th></tr>
+                </thead>
+                <tbody>
+                    {% for log in page_obj %}
+                    <tr>
+                        <td class="text-muted text-nowrap" style="font-size:12px">{{ log.created_at|date:"Y-m-d H:i" }}</td>
+                        <td style="font-size:13px">{{ log.user.username|default:"-" }}</td>
+                        <td><span class="badge bg-secondary" title="{{ log.action }}">{{ log.action_label }}</span></td>
+                        <td style="font-size:13px">{{ log.target|truncatechars:80 }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="4" class="text-center text-muted py-4">Лог байхгүй</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% if page_obj.has_other_pages %}
+    <div class="card-footer d-flex justify-content-between align-items-center">
+        <small class="text-muted">Нийт {{ page_obj.paginator.count }} бичлэг</small>
+        <nav><ul class="pagination pagination-sm mb-0">
+            {% if page_obj.has_previous %}
+            <li class="page-item"><a class="page-link" href="?{% query_update page=page_obj.previous_page_number %}">‹</a></li>
+            {% endif %}
+            <li class="page-item active"><a class="page-link">{{ page_obj.number }}</a></li>
+            {% if page_obj.has_next %}
+            <li class="page-item"><a class="page-link" href="?{% query_update page=page_obj.next_page_number %}">›</a></li>
+            {% endif %}
+        </ul></nav>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

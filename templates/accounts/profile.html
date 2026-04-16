@@ -1,0 +1,142 @@
+{% extends 'base.html' %}
+{% block title %}Профайл{% endblock %}
+{% block page_title %}Профайл{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        <h4 class="fw-bold mb-4"><i class="bi bi-person-circle me-2 text-primary"></i>Профайл</h4>
+
+        {% if form.errors %}
+        <!-- Form алдаатай бол edit горимд шууд нээнэ -->
+        <script>document.addEventListener('DOMContentLoaded',()=>switchMode('edit'));</script>
+        {% endif %}
+
+        <div class="card border-0">
+            <div class="card-body p-4">
+
+                <!-- Зураг + нэр хэсэг (үргэлж харагдана) -->
+                <div class="d-flex align-items-center gap-4 mb-4 pb-4 border-bottom">
+                    <div id="avatarDisplay">
+                        {% if user.profile_photo %}
+                        <img src="{{ user.profile_photo.url }}" alt="Профайл" id="avatarImg"
+                             class="rounded-circle"
+                             style="width:80px;height:80px;object-fit:cover;border:3px solid var(--border)">
+                        {% else %}
+                        <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                             style="width:80px;height:80px;background:linear-gradient(135deg,#6366f1,#8b5cf6);font-size:28px;color:white;font-weight:700">
+                            {{ user.get_full_name|first|upper|default:user.username|first|upper }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="flex-grow-1">
+                        <h5 class="fw-bold mb-1">{{ user.get_full_name|default:user.username }}</h5>
+                        <span class="badge bg-primary">{{ user.get_role_display }}</span>
+                        {% if user.department %}
+                        <span class="badge bg-secondary ms-1">{{ user.department }}</span>
+                        {% endif %}
+                    </div>
+                    <!-- VIEW горимын засах товч -->
+                    <div id="btnEdit">
+                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="switchMode('edit')">
+                            <i class="bi bi-pencil me-1"></i>Засах
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ===== VIEW горим ===== -->
+                <div id="viewMode">
+                    <div class="row g-3">
+                        <div class="col-sm-6">
+                            <div class="text-muted" style="font-size:12px;text-transform:uppercase;letter-spacing:.05em">Овог</div>
+                            <div class="fw-semibold mt-1">{{ user.last_name|default:"—" }}</div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="text-muted" style="font-size:12px;text-transform:uppercase;letter-spacing:.05em">Нэр</div>
+                            <div class="fw-semibold mt-1">{{ user.first_name|default:"—" }}</div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="text-muted" style="font-size:12px;text-transform:uppercase;letter-spacing:.05em">Имэйл</div>
+                            <div class="fw-semibold mt-1">{{ user.email|default:"—" }}</div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="text-muted" style="font-size:12px;text-transform:uppercase;letter-spacing:.05em">Утас</div>
+                            <div class="fw-semibold mt-1">{{ user.phone|default:"—" }}</div>
+                        </div>
+                        <div class="col-12">
+                            <div class="text-muted" style="font-size:12px;text-transform:uppercase;letter-spacing:.05em">Хэлтэс</div>
+                            <div class="fw-semibold mt-1">{{ user.department|default:"—" }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== EDIT горим (анхдагч нуугдсан) ===== -->
+                <div id="editMode" style="display:none">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="row g-3">
+                            <div class="col-sm-6">
+                                <label class="form-label">{{ form.last_name.label }}</label>
+                                {{ form.last_name }}
+                                {% if form.last_name.errors %}<div class="text-danger small">{{ form.last_name.errors|join:", " }}</div>{% endif %}
+                            </div>
+                            <div class="col-sm-6">
+                                <label class="form-label">{{ form.first_name.label }}</label>
+                                {{ form.first_name }}
+                                {% if form.first_name.errors %}<div class="text-danger small">{{ form.first_name.errors|join:", " }}</div>{% endif %}
+                            </div>
+                            <div class="col-sm-6">
+                                <label class="form-label">{{ form.email.label }}</label>
+                                {{ form.email }}
+                                {% if form.email.errors %}<div class="text-danger small">{{ form.email.errors|join:", " }}</div>{% endif %}
+                            </div>
+                            <div class="col-sm-6">
+                                <label class="form-label">{{ form.phone.label }}</label>
+                                {{ form.phone }}
+                                {% if form.phone.errors %}<div class="text-danger small">{{ form.phone.errors|join:", " }}</div>{% endif %}
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label text-muted" style="font-size:13px">Хэлтэс</label>
+                                <div class="form-control bg-light text-muted" style="cursor:default">
+                                    {{ user.department|default:"—" }}
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">{{ form.profile_photo.label }}</label>
+                                {{ form.profile_photo }}
+                                <div class="form-text">Зөвшөөрөгдсөн: JPG, PNG, GIF, WEBP. Дээд хэмжээ: 2МБ</div>
+                                {% if form.profile_photo.errors %}<div class="text-danger small">{{ form.profile_photo.errors|join:", " }}</div>{% endif %}
+                            </div>
+                        </div>
+                        <div class="mt-4 d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-lg me-1"></i>Хадгалах
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="switchMode('view')">
+                                <i class="bi bi-x-lg me-1"></i>Болих
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function switchMode(mode) {
+    const view = document.getElementById('viewMode');
+    const edit = document.getElementById('editMode');
+    const btnEdit = document.getElementById('btnEdit');
+    if (mode === 'edit') {
+        view.style.display = 'none';
+        edit.style.display = 'block';
+        btnEdit.style.display = 'none';
+    } else {
+        view.style.display = 'block';
+        edit.style.display = 'none';
+        btnEdit.style.display = 'block';
+    }
+}
+</script>
+{% endblock %}

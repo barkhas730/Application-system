@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+{% load query_tags %}
+{% block title %}Хэрэглэгчид{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="fw-bold mb-0"><i class="bi bi-people me-2 text-primary"></i>Хэрэглэгчид</h4>
+    <a href="{% url 'user_create' %}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Нэмэх</a>
+</div>
+
+<div class="card border-0 shadow-sm mb-3">
+    <div class="card-body py-2">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-sm-4">
+                <input type="text" name="q" class="form-control form-control-sm" placeholder="Хайх..." value="{{ q }}">
+            </div>
+            <div class="col-sm-3">
+                <select name="role" class="form-select form-select-sm">
+                    <option value="">Бүх эрх</option>
+                    <option value="employee" {% if role == 'employee' %}selected{% endif %}>Ажилтан</option>
+                    <option value="hr" {% if role == 'hr' %}selected{% endif %}>Хүний нөөц</option>
+                    <option value="admin_role" {% if role == 'admin_role' %}selected{% endif %}>Захирал</option>
+                    <option value="sysadmin" {% if role == 'sysadmin' %}selected{% endif %}>Системийн админ</option>
+                </select>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-search"></i></button>
+                <a href="{% url 'user_list' %}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-x-lg"></i></a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <form method="post" action="{% url 'user_bulk_action' %}">
+            {% csrf_token %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width:40px"><input type="checkbox" id="selectAll" class="form-check-input"></th>
+                            <th>Хэрэглэгч</th>
+                            <th>Нэр</th>
+                            <th>Эрх</th>
+                            <th>Хэлтэс</th>
+                            <th>Имэйл</th>
+                            <th>Төлөв</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for u in page_obj %}
+                        <tr>
+                            <td><input type="checkbox" name="user_ids" value="{{ u.pk }}" class="form-check-input userCheck"></td>
+                            <td class="fw-semibold">{{ u.username }}</td>
+                            <td>{{ u.get_full_name|default:"-" }}</td>
+                            <td><span class="badge bg-secondary">{{ u.get_role_display }}</span></td>
+                            <td class="small text-muted">{{ u.department|default:"-" }}</td>
+                            <td class="small text-muted">{{ u.email|default:"-" }}</td>
+                            <td>
+                                {% if u.is_active %}
+                                <span class="badge bg-success">Идэвхтэй</span>
+                                {% else %}
+                                <span class="badge bg-danger">Идэвхгүй</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'user_edit' u.pk %}" class="btn btn-sm btn-outline-primary me-1"><i class="bi bi-pencil"></i></a>
+                                <a href="{% url 'user_reset_password' u.pk %}" class="btn btn-sm btn-outline-warning"><i class="bi bi-key"></i></a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="8" class="text-center text-muted py-4">Хэрэглэгч олдсонгүй</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="d-flex align-items-center gap-2 p-3 border-top bg-light rounded-bottom">
+                <small class="text-muted me-1"><i class="bi bi-check2-square me-1"></i>Сонгосон хэрэглэгчдэд:</small>
+                <select name="action" class="form-select form-select-sm" style="max-width:220px">
+                    <option value="">— Үйлдэл сонгох —</option>
+                    <option value="activate">Идэвхжүүлэх</option>
+                    <option value="deactivate">Идэвхгүй болгох</option>
+                </select>
+                <button type="submit" class="btn btn-sm btn-primary"
+                        onclick="return confirmBulk()">
+                    <i class="bi bi-lightning-charge me-1"></i>Хэрэгжүүлэх
+                </button>
+            </div>
+        </form>
+    </div>
+    {% if page_obj.has_other_pages %}
+    <div class="card-footer d-flex justify-content-between">
+        <small class="text-muted">Нийт {{ page_obj.paginator.count }} хэрэглэгч</small>
+        <nav><ul class="pagination pagination-sm mb-0">
+            {% if page_obj.has_previous %}<li class="page-item"><a class="page-link" href="?{% query_update page=page_obj.previous_page_number %}">‹</a></li>{% endif %}
+            <li class="page-item active"><a class="page-link">{{ page_obj.number }}</a></li>
+            {% if page_obj.has_next %}<li class="page-item"><a class="page-link" href="?{% query_update page=page_obj.next_page_number %}">›</a></li>{% endif %}
+        </ul></nav>
+    </div>
+    {% endif %}
+</div>
+<script>
+document.getElementById('selectAll').addEventListener('change', function() {
+    document.querySelectorAll('.userCheck').forEach(c => c.checked = this.checked);
+});
+
+function confirmBulk() {
+    const checked = document.querySelectorAll('.userCheck:checked').length;
+    const action = document.querySelector('[name="action"]').value;
+    if (!action) { alert('Үйлдэл сонгоно уу.'); return false; }
+    if (checked === 0) { alert('Хэрэглэгч сонгоно уу.'); return false; }
+    const label = action === 'activate' ? 'идэвхжүүлэх' : 'идэвхгүй болгох';
+    return confirm(checked + ' хэрэглэгчийг ' + label + ' уу?');
+}
+</script>
+{% endblock %}

@@ -1,0 +1,254 @@
+{% extends 'base.html' %}
+{% block title %}{% if app %}Өргөдөл засах{% else %}Шинэ өргөдөл{% endif %}{% endblock %}
+{% block content %}
+<div class="d-flex align-items-center mb-3">
+    <a href="{% url 'application_list' %}" class="btn btn-outline-secondary btn-sm me-2"><i class="bi bi-arrow-left"></i></a>
+    <h4 class="fw-bold mb-0">{% if app %}Өргөдөл засах: {{ app.app_number }}{% else %}Шинэ өргөдөл{% endif %}</h4>
+</div>
+
+<form method="post" enctype="multipart/form-data" id="appForm">
+    {% csrf_token %}
+    <div class="row g-3">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-header bg-transparent fw-semibold"><i class="bi bi-file-text me-2"></i>Үндсэн мэдээлэл</div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Өргөдлийн төрөл <span class="text-danger">*</span></label>
+                        {{ form.app_type }}
+                    </div>
+                    <div id="recipientSection" class="mb-3" style="display:none">
+                        <label class="form-label fw-semibold">Шийдвэрлэх албан тушаалтан <span class="text-danger">*</span></label>
+                        <select name="assigned_to" id="id_assigned_to" class="form-select">
+                            <option value="">— Сонгоно уу —</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Гарчиг <span class="text-danger">*</span></label>
+                        {{ form.title }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Тайлбар <span class="text-danger">*</span></label>
+                        {{ form.description }}
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-sm-6">
+                            <label class="form-label fw-semibold">Ач холбогдол</label>
+                            {{ form.priority }}
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label fw-semibold">Дуусах огноо</label>
+                            {{ form.due_date }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {# Dynamic extra fields by type #}
+            <div id="extraFields" class="card border-0 shadow-sm mb-3" style="display:none">
+                <div class="card-header bg-transparent fw-semibold"><i class="bi bi-card-list me-2"></i>Нэмэлт мэдээлэл</div>
+                <div class="card-body" id="extraFieldsBody"></div>
+            </div>
+
+            {# Attachment #}
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-header bg-transparent fw-semibold"><i class="bi bi-paperclip me-2"></i>Файл хавсаргах <span id="attachRequired" class="badge bg-danger ms-2" style="display:none">Заавал</span></div>
+                <div class="card-body">
+                    <input type="file" name="file" class="form-control" id="fileInput" accept=".pdf,.docx,.jpg,.jpeg,.png">
+                    <div class="form-text">Зөвшөөрөгдсөн: PDF, DOCX, JPG, PNG<br>Хавсаргах файлын дээд хэмжээ: 10МБ</div>
+                    {% if app %}
+                    {% with app.attachments.all as atts %}
+                    {% if atts %}
+                    <div class="mt-2">
+                        <small class="text-muted fw-semibold">Одоогийн хавсралтууд:</small>
+                        {% for att in atts %}
+                        <div class="d-flex align-items-center gap-2 mt-1">
+                            <i class="bi bi-file-earmark text-primary"></i>
+                            <span class="small">{{ att.file_name }} ({{ att.file_size_display }})</span>
+                            {% if app.can_edit %}
+                            {# Буцаагдсан / ноорог горимд хавсралт устгах боломжтой #}
+                            <form method="post" action="{% url 'attachment_delete' att.pk %}"
+                                  onsubmit="return confirm('{{ att.file_name }} хавсралтыг устгахдаа итгэлтэй байна уу?');"
+                                  style="display:inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-1" title="Устгах">
+                                    <i class="bi bi-trash" style="font-size:11px"></i>
+                                </button>
+                            </form>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    {% endwith %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent fw-semibold"><i class="bi bi-send me-2"></i>Илгээх</div>
+                <div class="card-body d-grid gap-2">
+                    <button type="submit" name="action" value="submit" class="btn btn-primary" onclick="return confirmSubmit()">
+                        <i class="bi bi-send me-2"></i>Илгээх
+                    </button>
+                    <button type="submit" name="action" value="draft" class="btn btn-outline-secondary" formnovalidate>
+                        <i class="bi bi-floppy me-2"></i>Ноорог хэлбэрээр хадгалах
+                    </button>
+                    <a href="{% url 'application_list' %}" class="btn btn-outline-danger">
+                        <i class="bi bi-x-lg me-2"></i>Болих
+                    </a>
+                    <!-- Өргөдлийн төрлөөс хамааралтай заавар / анхааруулга -->
+                    <div id="typeInstructions" class="alert alert-warning d-none mt-2 mb-0 py-2" style="font-size:13px">
+                        <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                        <span id="typeInstructionsText"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {{ form.extra_data }}
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// APP_TYPES-д required_fields нь DB-с ирсэн бүрэн тодорхойлолт агуулна
+// {pk: {name, requires_attachment, required_fields: [{key,label,type,required,options}], instructions}}
+const APP_TYPES = {{ app_types_json|safe }};
+const EXISTING_EXTRA = {{ app.extra_data|default:"{}" }};
+const RECIPIENTS = {{ recipients_json|safe }};
+const DEPT_HEADS = {{ dept_heads_json|safe }};
+const INIT_ASSIGNED_TO = {{ app.assigned_to.pk|default:'null' }};
+
+let _isDraft = false;
+document.querySelectorAll('button[name="action"]').forEach(btn => {
+    btn.addEventListener('click', function() { _isDraft = this.value === 'draft'; });
+});
+
+function renderExtraFields(typePk) {
+    const container = document.getElementById('extraFieldsBody');
+    const section   = document.getElementById('extraFields');
+    const reqBadge  = document.getElementById('attachRequired');
+    const fileInput = document.getElementById('fileInput');
+
+    const typeInfo = APP_TYPES[String(typePk)] || {};
+    // required_fields нь DB-с ирсэн [{key,label,type,required,options}] жагсаалт
+    const fields   = typeInfo.required_fields || [];
+
+    // Хавсралт заавал тэмдэг (зөвхөн Submit хийхэд, ноорогт биш)
+    if (typeInfo.requires_attachment && !_isDraft) {
+        reqBadge.style.display = '';
+        fileInput.setAttribute('required', 'required');
+    } else {
+        reqBadge.style.display = 'none';
+        fileInput.removeAttribute('required');
+    }
+
+    if (fields.length === 0) {
+        section.style.display = 'none';
+        container.innerHTML = '';
+        return;
+    }
+
+    section.style.display = '';
+    let html = '';
+    fields.forEach(f => {
+        const val    = EXISTING_EXTRA[f.key] || '';
+        const req    = (f.required && !_isDraft) ? 'required' : '';
+        const reqStar = (f.required && !_isDraft) ? '<span class="text-danger">*</span>' : '';
+
+        if (f.type === 'textarea') {
+            html += `<div class="mb-3"><label class="form-label fw-semibold">${f.label} ${reqStar}</label>
+                <textarea name="${f.key}" class="form-control" rows="2" ${req}>${val}</textarea></div>`;
+
+        } else if (f.type === 'select') {
+            const opts = (f.options || []).map(o =>
+                `<option value="${o}" ${val === o ? 'selected' : ''}>${o}</option>`
+            ).join('');
+            html += `<div class="mb-3"><label class="form-label fw-semibold">${f.label} ${reqStar}</label>
+                <select name="${f.key}" class="form-select" ${req}>
+                    <option value="">-- Сонгох --</option>${opts}
+                </select></div>`;
+
+        } else if (f.type === 'select_dynamic') {
+            // Хэлтсийн захиралуудын динамик жагсаалт — source зааж өгсөн
+            const sourceData = (f.source === 'dept_heads') ? DEPT_HEADS : [];
+            const opts = sourceData.map(o =>
+                `<option value="${o.id}" ${String(val) === String(o.id) ? 'selected' : ''}>
+                    ${o.name} - ${o.dept} - ${o.role}
+                </option>`
+            ).join('');
+            html += `<div class="mb-3"><label class="form-label fw-semibold">${f.label} ${reqStar}</label>
+                <select name="${f.key}" class="form-select" ${req}>
+                    <option value="">-- Сонгох --</option>${opts}
+                </select></div>`;
+
+        } else {
+            // text | number | date
+            html += `<div class="mb-3"><label class="form-label fw-semibold">${f.label} ${reqStar}</label>
+                <input type="${f.type}" name="${f.key}" class="form-control" value="${val}" ${req}></div>`;
+        }
+    });
+    container.innerHTML = html;
+}
+
+function updateRecipients(typePk) {
+    const recipients = RECIPIENTS[String(typePk)] || [];
+    const section = document.getElementById('recipientSection');
+    const select = document.getElementById('id_assigned_to');
+    select.innerHTML = '<option value="">— Сонгоно уу —</option>';
+    if (recipients.length === 0) {
+        section.style.display = 'none';
+        return;
+    }
+    section.style.display = '';
+    recipients.forEach(r => {
+        const opt = document.createElement('option');
+        opt.value = r.id;
+        opt.textContent = `${r.name} - ${r.dept} - ${r.role}`;
+        if (INIT_ASSIGNED_TO && String(INIT_ASSIGNED_TO) === String(r.id)) opt.selected = true;
+        select.appendChild(opt);
+    });
+}
+
+// Өргөдлийн төрлийн заавар / анхааруулга харуулах
+function updateTypeInstructions(typeId) {
+    const box = document.getElementById('typeInstructions');
+    const txt = document.getElementById('typeInstructionsText');
+    const info = APP_TYPES[typeId];
+    if (info && info.instructions && info.instructions.trim()) {
+        txt.textContent = info.instructions;
+        box.classList.remove('d-none');
+    } else {
+        box.classList.add('d-none');
+        txt.textContent = '';
+    }
+}
+
+document.getElementById('id_app_type').addEventListener('change', function() {
+    renderExtraFields(this.value);
+    updateRecipients(this.value);
+    updateTypeInstructions(this.value);
+});
+
+// Init
+const initVal = document.getElementById('id_app_type').value;
+if (initVal) {
+    renderExtraFields(initVal);
+    updateRecipients(initVal);
+    updateTypeInstructions(initVal);
+}
+
+function confirmSubmit() {
+    const section = document.getElementById('recipientSection');
+    const select = document.getElementById('id_assigned_to');
+    if (section.style.display !== 'none' && select && !select.value) {
+        alert('Шийдвэрлэх албан тушаалтаныг сонгоно уу.');
+        return false;
+    }
+    return confirm('Өргөдлийг илгээхдээ итгэлтэй байна уу? Илгээсний дараа засварлах боломж хязгаарлагдана.');
+}
+</script>
+{% endblock %}

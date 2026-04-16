@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block title %}Цуцлах{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm border-danger">
+            <div class="card-header bg-danger text-white fw-semibold">
+                <i class="bi bi-exclamation-triangle me-2"></i>Өргөдөл цуцлах
+            </div>
+            <div class="card-body">
+                <p>Та <strong>{{ app.app_number }} — {{ app.title }}</strong> өргөдлийг цуцлахдаа итгэлтэй байна уу?</p>
+                <p class="text-muted small">Цуцалсан өргөдлийг сэргээх боломжгүй.</p>
+                <div class="d-flex gap-2">
+                    <form method="post">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-x-circle me-2"></i>Тийм, цуцлах
+                        </button>
+                    </form>
+                    <a href="{% url 'application_detail' app.pk %}" class="btn btn-outline-secondary">Болих</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
